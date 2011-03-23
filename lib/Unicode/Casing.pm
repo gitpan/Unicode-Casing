@@ -14,7 +14,7 @@ our @EXPORT_OK = ();
 
 our @EXPORT = ();
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 require XSLoader;
 XSLoader::load('Unicode::Casing', $VERSION);
@@ -111,8 +111,6 @@ sub import {
 
         # Save code returned so can tear down upon unimport();
         $^H{$setup_key} = setup($function);
-        print __LINE__, ": $function=",  $^H{$setup_key},
-        "\n";
     }
 
     croak("Must specify at least one case override") unless %args;
@@ -122,7 +120,6 @@ sub import {
 sub unimport {
     foreach my $function (qw(lc uc lcfirst ucfirst)) {
         my $id = $^H{setup_key($function)};
-        print __LINE__, ": $function=$id\n";
         teardown($function, $id) if defined $id;
     }
     return;
