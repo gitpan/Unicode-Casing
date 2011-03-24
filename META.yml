@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               Unicode-Casing
-version:            0.04
+version:            0.05
 abstract:           Perl extension to override system case changing functions
 author:
     - Karl Williamson <khw@(none)>
