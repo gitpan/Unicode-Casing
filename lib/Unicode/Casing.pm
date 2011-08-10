@@ -15,7 +15,7 @@ our @EXPORT_OK = ();
 
 our @EXPORT = ();
 
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 
 require XSLoader;
 XSLoader::load('Unicode::Casing', $VERSION);
@@ -129,6 +129,8 @@ sub unimport {
 
 1;
 __END__
+
+=encoding utf8
 
 =head1 NAME
 
@@ -246,9 +248,10 @@ See L<http://perlmonks.org/?node_id=797851>.
 
 =head1 AUTHOR
 
-Karl Williamson, E<lt>khw@cpan.orgE<gt>,
+Karl Williamson, C<< <khw@cpan.org> >>,
 with advice and guidance from various Perl 5 porters,
 including Paul Evans, Burak Gürsoy, Florian Ragwitz, and Ricardo Signes.
+
 =head1 COPYRIGHT AND LICENSE
 
 Copyright (C) 2011 by Karl Williamson
