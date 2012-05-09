@@ -1,7 +1,8 @@
 # Before `make install' is performed this script should be runnable with
+$|=1;
 # `make test'. After `make install' it should work as `perl Unicode-Casing.t'
 
-use Test::More tests => 22;
+use Test::More tests => 25;
 
 sub simple_uc1 {
     my $string = shift;
@@ -45,9 +46,15 @@ sub simple_lcfirst1 {
     return $string;
 }
 
+sub simple_fc1 {
+    my $string = shift;
+    $string = CORE::fc($string);
+    $string =~ s/a/_a1_/g;
+    return $string;
+}
+
 use Unicode::Casing uc => \&simple_uc1, ucfirst => \&simple_ucfirst1,
                     lc => \&simple_lc1, lcfirst => \&simple_lcfirst1;
-
 is (uc("bb"), "BB", "Verify uc() non-overridden character works");
 is (uc("aa"), "_A1__A1_", "Verify uc() override works");
 is (ucfirst("bb"), "Bb", "Verify ucfirst() non-overridden character works");
@@ -82,3 +89,14 @@ is(uc("aa"), "AA", "Verify that reverts to standard behavior after a 'no'");
 is(ucfirst("aa"), "Aa", "Verify that reverts to standard behavior after a 'no'");
 is(lc("AA"), "aa", "Verify that reverts to standard behavior after a 'no'");
 is(lcfirst("AA"), "aA", "Verify that reverts to standard behavior after a 'no'");
+
+SKIP: { 
+    skip "fc not in this version of Perl", 3 if $^V lt v5.15.8;
+    use if $^V ge v5.15.8, Unicode::Casing, fc => \&simple_fc1;
+    use if $^V ge v5.15.8, 'feature', 'fc';
+    is (fc("BB"), "bb", "Verify fc() non-overridden character works");
+    is (fc("AA"), "_a1__a1_", "Verify fc() override works");
+
+    no Unicode::Casing;
+    is(fc("AA"), "aa", "Verify that reverts to standard behavior after a 'no'");
+}

@@ -1,4 +1,4 @@
-Unicode-Casing version 0.01
+Unicode-Casing version 0.08
 ===========================
 
 INSTALLATION
@@ -17,8 +17,6 @@ This module requires these other modules and libraries:
     B::Hooks::OP::PPAddr; 
 
 COPYRIGHT AND LICENCE
-
-Put the correct copyright and licence information here.
 
 Copyright (C) 2011 by Karl Williamson
 

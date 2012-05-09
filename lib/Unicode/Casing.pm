@@ -15,7 +15,7 @@ our @EXPORT_OK = ();
 
 our @EXPORT = ();
 
-our $VERSION = '0.08';
+our $VERSION = '0.09';
 
 require XSLoader;
 XSLoader::load('Unicode::Casing', $VERSION);
@@ -64,6 +64,7 @@ sub _dispatch {
         return CORE::lc($string) if $function eq 'lc';
         return CORE::ucfirst($string) if $function eq 'ucfirst';
         return CORE::lcfirst($string) if $function eq 'lcfirst';
+        return CORE::fc($string) if $function eq 'fc';
         return;
     }
 
@@ -92,12 +93,29 @@ sub import {
             croak("Missing CODE reference for $function");
         }
         if (ref $user_sub ne 'CODE') {
-            croak("$user_sub is not a CODE reference");
+            croak("XXX $user_sub is not a CODE reference");
+        }
+        elsif (! defined &{$user_sub}) {
+
+            # Without this prohibition, and if $user_sub tries to call the
+            # CORE:: version of itself, it instead gets itself, resulting in
+            # infinite recursion.  I think that what is going on is that
+            # because of the changing of the OPCODE table to point to
+            # $user_sub instead of the normal routine,, the Perl core gets
+            # confused and thinks that $user_sub is that normal routine, so it
+            # installs $user_sub as CORE::.  This isn't a problem when
+            # $user_sub is already defined by the time this gets called, as
+            # the CORE:: version is still valid.  But this is scary for the
+            # general case.
+            croak("The code for '$function' must be defined before importing Unicode::Casing");
         }
         if ($function ne 'uc' && $function ne 'lc'
-            && $function ne 'ucfirst' && $function ne 'lcfirst')
+            && $function ne 'ucfirst' && $function ne 'lcfirst'
+            && ! ($function eq 'fc' && $^V ge v5.15.8))
         {
-            croak("$function must be one of: 'uc', 'lc', 'ucfirst', 'lcfirst'");
+            my $msg = "$function must be one of: 'uc', 'lc', 'ucfirst', 'lcfirst'";
+            $msg .= ", 'fc'" if $^V ge v5.15.8;
+            croak($msg);
         }
         elsif (exists $args{$function}) {
             croak("Only one override for \"$function\" is allowed");
@@ -120,13 +138,13 @@ sub import {
 }
 
 sub unimport {
-    foreach my $function (qw(lc uc lcfirst ucfirst)) {
+    foreach my $function (qw(lc uc lcfirst ucfirst fc)) {
         my $id = $^H{setup_key($function)};
         teardown($function, $id) if defined $id;
     }
     return;
 }
-
+        
 1;
 __END__
 
@@ -140,7 +158,8 @@ Unicode::Casing - Perl extension to override system case changing functions
 
   use Unicode::Casing
             uc => \&my_uc, lc => \&my_lc,
-            ucfirst => \&my_ucfirst, lcfirst => \&my_lcfirst;
+            ucfirst => \&my_ucfirst, lcfirst => \&my_lcfirst,
+            fc => \&my_fc;
   no Unicode::Casing;
 
   package foo::bar;
@@ -151,6 +170,7 @@ Unicode::Casing - Perl extension to override system case changing functions
             lc      => \&_lc,
             ucfirst => \&_ucfirst,
             lcfirst => \&_lcfirst,
+            fc => \&_fc,
         );
     }
     sub unimport {
@@ -161,9 +181,9 @@ Unicode::Casing - Perl extension to override system case changing functions
 
 This module allows overriding the system-defined character case changing
 functions.  Any time something in its lexical scope would
-ordinarily call C<lc()>, C<lcfirst()>, C<uc()>, or C<ucfirst()> the
+ordinarily call C<lc()>, C<lcfirst()>, C<uc()>, C<ucfirst()>, or C<fc()> the
 corresponding user-specified function will instead be called.  This applies to
-direct calls, and indirect calls via the C<\L>, C<\l>, C<\U>, and C<\u>
+direct calls, and indirect calls via the C<\L>, C<\l>, C<\U>, C<\u>, and C<\F>
 escapes in double quoted strings and regular expressions.
 
 Each function is passed a string to change the case of, and should return the 
@@ -224,6 +244,10 @@ Unicode behavior, the strings must be encoded in utf8 (which the override
 functions can force) or calls to the operations must be within the scope of C<use
 feature 'unicode_strings'> (which is available starting in Perl version 5.12).
 
+Also, note that C<fc()> and C<\F> are available only in Perls starting with
+version v5.15.8.  Trying to override them on earlier versions will result in
+a fatal error.
+
 Note that there can be problems installing this (at least on Windows)
 if using an old version of ExtUtils::Depends. To get around this follow
 these steps:
@@ -259,6 +283,3 @@ Copyright (C) 2011 by Karl Williamson
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.10.1 or,
 at your option, any later version of Perl 5 you may have available.
-
-
-=cut
