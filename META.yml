@@ -1,26 +1,26 @@
---- #YAML:1.0
-name:               Unicode-Casing
-version:            0.08
-abstract:           Perl extension to override system case changing functions
+---
+abstract: 'Perl extension to override system case changing functions'
 author:
-    - Karl Williamson <khw@(none)>
-license:            unknown
-distribution_type:  module
-configure_requires:
-    ExtUtils::Depends:    0
-    ExtUtils::MakeMaker:  0
+  - 'Karl Williamson <khw@(none)>'
 build_requires:
-    ExtUtils::MakeMaker:  0
-requires:
-    B::Hooks::OP::Check:  0
-    B::Hooks::OP::PPAddr:  0
-    Test::More:           0
-    XSLoader:             0
-no_index:
-    directory:
-        - t
-        - inc
-generated_by:       ExtUtils::MakeMaker version 6.55_02
+  ExtUtils::MakeMaker: 0
+configure_requires:
+  ExtUtils::Depends: 0
+  ExtUtils::MakeMaker: 0
+dynamic_config: 1
+generated_by: 'ExtUtils::MakeMaker version 6.6302, CPAN::Meta::Converter version 2.120630'
+license: unknown
 meta-spec:
-    url:      http://module-build.sourceforge.net/META-spec-v1.4.html
-    version:  1.4
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: 1.4
+name: Unicode-Casing
+no_index:
+  directory:
+    - t
+    - inc
+requires:
+  B::Hooks::OP::Check: 0
+  B::Hooks::OP::PPAddr: 0
+  Test::More: 0
+  XSLoader: 0
+version: 0.09
