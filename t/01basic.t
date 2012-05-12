@@ -1,60 +1,66 @@
 # Before `make install' is performed this script should be runnable with
-$|=1;
 # `make test'. After `make install' it should work as `perl Unicode-Casing.t'
 
 use Test::More tests => 25;
 
-sub simple_uc1 {
-    my $string = shift;
-    $string = CORE::uc($string);
-    $string =~ s/A/_A1_/g;
-    return $string;
-}
+# So will handle \xb5 properly
+use if $^V ge v5.12.0, 'feature', 'unicode_strings';
 
 sub simple_uc2 {
     my $string = shift;
-    $string = CORE::uc($string);
+    $string = uc($string);
     $string =~ s/A/_A2_/g;
     return $string;
 }
 
 sub simple_ucfirst1 {
     my $string = shift;
-    $string = CORE::ucfirst($string);
+    $string = ucfirst($string);
     $string =~ s/^A/_A1_/;
     return $string;
 }
 
 sub simple_ucfirst2 {
     my $string = shift;
-    $string = CORE::ucfirst($string);
+    $string = ucfirst($string);
     $string =~ s/^A/_A2_/;
     return $string;
 }
 
 sub simple_lc1 {
     my $string = shift;
-    $string = CORE::lc($string);
+    $string = lc($string);
     $string =~ s/a/_a1_/g;
     return $string;
 }
 
 sub simple_lcfirst1 {
     my $string = shift;
-    $string = CORE::lcfirst($string);
+    $string = lcfirst($string);
     $string =~ s/^a/_a1_/;
     return $string;
 }
 
 sub simple_fc1 {
     my $string = shift;
-    $string = CORE::fc($string);
+    use if $^V ge v5.15.8, 'feature', 'fc';
+    $string = fc($string);
     $string =~ s/a/_a1_/g;
     return $string;
 }
 
+
 use Unicode::Casing uc => \&simple_uc1, ucfirst => \&simple_ucfirst1,
                     lc => \&simple_lc1, lcfirst => \&simple_lcfirst1;
+
+# This tests defining the function after the 'use'
+sub simple_uc1 {
+    my $string = shift;
+    $string = uc($string);
+    $string =~ s/A/_A1_/g;
+    return $string;
+}
+
 is (uc("bb"), "BB", "Verify uc() non-overridden character works");
 is (uc("aa"), "_A1__A1_", "Verify uc() override works");
 is (ucfirst("bb"), "Bb", "Verify ucfirst() non-overridden character works");
@@ -92,9 +98,12 @@ is(lcfirst("AA"), "aA", "Verify that reverts to standard behavior after a 'no'")
 
 SKIP: { 
     skip "fc not in this version of Perl", 3 if $^V lt v5.15.8;
+
     use if $^V ge v5.15.8, Unicode::Casing, fc => \&simple_fc1;
     use if $^V ge v5.15.8, 'feature', 'fc';
-    is (fc("BB"), "bb", "Verify fc() non-overridden character works");
+
+    # The b5 => 3bc distinquishes between lc and fc
+    is (fc("BB\x{b5}"), "bb\x{3bc}", "Verify fc() non-overridden character works");
     is (fc("AA"), "_a1__a1_", "Verify fc() override works");
 
     no Unicode::Casing;

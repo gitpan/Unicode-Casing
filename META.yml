@@ -23,4 +23,4 @@ requires:
   B::Hooks::OP::PPAddr: 0
   Test::More: 0
   XSLoader: 0
-version: 0.09
+version: 0.10

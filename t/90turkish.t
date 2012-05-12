@@ -11,13 +11,13 @@ plan tests => 49;
 sub turkish_uc($) {
     my $string = shift;
     $string =~ s/i/\x{130}/g;
-    return CORE::uc($string);
+    return uc($string);
 }
 
 sub turkish_ucfirst($) {
     my $string = shift;
     $string =~ s/^i/\x{130}/;
-    return CORE::ucfirst($string);
+    return ucfirst($string);
 }
 
 sub turkish_lc($) {
@@ -35,7 +35,7 @@ sub turkish_lc($) {
 
     $string =~ s/\x{130}/i/g;
 
-    return CORE::lc($string);
+    return lc($string);
 }
 
 sub turkish_lcfirst($) {
@@ -50,14 +50,13 @@ sub turkish_lcfirst($) {
 
     $string =~ s/^\x{130}/i/;
 
-    return CORE::lcfirst($string);
+    return lcfirst($string);
 }
 
 sub turkish_fc($) {
     my $string = shift;
 
     # Unless an I is before a dot_above, it turns into a dotless i (the dot
-    # XXX
     # above being attached to the I, without an intervening other Above mark;
     # an intervening non-mark (ccc=0) would mean that the dot above would be
     # attached to that character and not the I)
@@ -69,35 +68,8 @@ sub turkish_fc($) {
 
     $string =~ s/\x{130}/i/g;
 
-    return CORE::lc($string);
-}
-
-sub simple_uc1 {
-    my $string = shift;
-    $string = CORE::uc($string);
-    $string =~ s/A/_A1_/g;
-    return $string;
-}
-
-sub simple_uc2 {
-    my $string = shift;
-    $string = CORE::uc($string);
-    $string =~ s/A/_A2_/g;
-    return $string;
-}
-
-sub simple_ucfirst1 {
-    my $string = shift;
-    $string = CORE::ucfirst($string);
-    $string =~ s/^A/_A1_/;
-    return $string;
-}
-
-sub simple_ucfirst2 {
-    my $string = shift;
-    $string = CORE::ucfirst($string);
-    $string =~ s/^A/_A2_/;
-    return $string;
+    use if $^V ge v5.15.8, 'feature', 'fc';
+    return fc($string);
 }
 
 use if $^V lt v5.15.8, Unicode::Casing,

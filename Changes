@@ -1,5 +1,10 @@
 Revision history for Perl extension Unicode::Casing.
 
+0.10  XXX May XX 2012
+       - Fix bugs introduced by 0.09 on older Perls
+       - Fix #70270.
+       - Clean up pod to correct misstatements about CORE::
+       
 0.09  Mon May 07 2012
         - Add support for fc(), \F
 

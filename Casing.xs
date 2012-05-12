@@ -111,7 +111,7 @@ setup(type)
     CODE:
 
     /* setup() is called to set up function 'type': one of 'uc', 'ucfirst',
-     * 'lc', 'lcfirst' or 'fc to be overridden by a user-defined equivalent. */
+     * 'lc', 'lcfirst', or 'fc to be overridden by a user-defined equivalent. */
 
     /* Set check_call_back() to be called whenever 'op' is
         * encountered in the parse */

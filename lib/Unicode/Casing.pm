@@ -15,7 +15,7 @@ our @EXPORT_OK = ();
 
 our @EXPORT = ();
 
-our $VERSION = '0.09';
+our $VERSION = '0.10';
 
 require XSLoader;
 XSLoader::load('Unicode::Casing', $VERSION);
@@ -24,6 +24,9 @@ XSLoader::load('Unicode::Casing', $VERSION);
 # anywhere in the program.  Each gets a unique id, which is its index
 # into this list.
 my @_function_list;
+
+our @recursed;
+local @recursed;
 
 # The way it works is that each function that is overridden has a
 # reference stored to it in the array.  The index in the array to it is
@@ -37,6 +40,21 @@ my @_function_list;
 # happen when part of the core code processing a call to one of these
 # functions itself calls a casing function, as happens with Unicode
 # table look-ups.)
+
+my $fc_glob;
+
+# This is a work-around, suggested by Matthew S Trout, to the problem that
+# CORE::fc() is a syntax error on Perls prior to v5.15.8.  We have to avoid
+# compiling that expression on those Perls, but we want the compile-time
+# version of it on Perls that handle it.  Another solution would be to put it
+# in a sub module that is loaded with a 'use if,'.  We want CORE:: to get the
+# official version.  We can't do a string eval or otherwise defer this to
+# runtime, because by the time _dispatch is called, the op has been replaced,
+# and we would get infinite recursion.
+BEGIN {
+    no strict;
+    $fc_glob = \*{"CORE::fc"} if $^V ge v5.15.8;
+}
 
 sub _dispatch {
     my ($string, $function) = @_;
@@ -59,14 +77,26 @@ sub _dispatch {
 
     my $index = $hints_hash_ref->{$key};
 
-    if (! defined $index) { # Not overridden
+    if (! defined $index # Not overridden
+        || defined $recursed[$index])
+    {
         return CORE::uc($string) if $function eq 'uc';
         return CORE::lc($string) if $function eq 'lc';
         return CORE::ucfirst($string) if $function eq 'ucfirst';
         return CORE::lcfirst($string) if $function eq 'lcfirst';
-        return CORE::fc($string) if $function eq 'fc';
-        return;
+        return &$fc_glob($string) if $function eq 'fc';
+#        if ($function eq 'fc') {
+#            return fc($string);
+#
+#            # Need to do string eval so this whole file compiles on releases
+#            # where CORE::fc() doesn't exist.
+#            my $fc = eval "CORE::fc(\$string)";
+#            croak $@ if $@;
+#            return $fc;
+#        }
     }
+
+    local $recursed[$index] = $string;
 
     # Force scalar context and returning exactly one value;
     my $ret = &{$_function_list[$index]}($string);
@@ -93,21 +123,7 @@ sub import {
             croak("Missing CODE reference for $function");
         }
         if (ref $user_sub ne 'CODE') {
-            croak("XXX $user_sub is not a CODE reference");
-        }
-        elsif (! defined &{$user_sub}) {
-
-            # Without this prohibition, and if $user_sub tries to call the
-            # CORE:: version of itself, it instead gets itself, resulting in
-            # infinite recursion.  I think that what is going on is that
-            # because of the changing of the OPCODE table to point to
-            # $user_sub instead of the normal routine,, the Perl core gets
-            # confused and thinks that $user_sub is that normal routine, so it
-            # installs $user_sub as CORE::.  This isn't a problem when
-            # $user_sub is already defined by the time this gets called, as
-            # the CORE:: version is still valid.  But this is scary for the
-            # general case.
-            croak("The code for '$function' must be defined before importing Unicode::Casing");
+            croak("$user_sub (for $function) is not a CODE reference");
         }
         if ($function ne 'uc' && $function ne 'lc'
             && $function ne 'ucfirst' && $function ne 'lcfirst'
@@ -180,30 +196,38 @@ Unicode::Casing - Perl extension to override system case changing functions
 =head1 DESCRIPTION
 
 This module allows overriding the system-defined character case changing
-functions.  Any time something in its lexical scope would
-ordinarily call C<lc()>, C<lcfirst()>, C<uc()>, C<ucfirst()>, or C<fc()> the
-corresponding user-specified function will instead be called.  This applies to
-direct calls, and indirect calls via the C<\L>, C<\l>, C<\U>, C<\u>, and C<\F>
-escapes in double quoted strings and regular expressions.
+operations.  Any time something in its lexical scope would ordinarily call
+C<lc()>, C<lcfirst()>, C<uc()>, C<ucfirst()>, or C<fc()>, the corresponding
+user-specified function will instead be called.  This applies to direct calls
+(even those prefaced by C<CORE::>), and indirect calls via the C<\L>, C<\l>,
+C<\U>, C<\u>, and C<\F> escapes in double-quoted strings and regular
+expressions.
 
-Each function is passed a string to change the case of, and should return the 
-case-changed version of that string.  Using, for example, C<\U> inside the
-override function for C<uc()> will lead to infinite recursion, but the
-standard casing functions are available via CORE::.  For example,
+Each function is passed a string whose case is to be changed, and should
+return that case-changed version of that string.  Within the function's
+dynamic scope, references to the operation it is overriding use the
+non-overridden version.  For example:
     
  sub my_uc {
     my $string = shift;
     print "Debugging information\n";
-    return CORE::uc($string);
+    return uc($string);
  }
  use Unicode::Casing uc => \&my_uc;
  uc($foo);
 
 gives the standard upper-casing behavior, but prints "Debugging information"
-first.
+first.  This also applies to the escapes.  Using, for example, C<\U> inside
+the override function for C<uc()> will call the non-overridden C<uc()>.
+Since this applies across the dynamic scope, if C<my_uc> calls function C<a>
+which calls C<b> which calls C<c> which calls C<uc>, that C<uc> is the
+non-overridden version.  Otherwise there would be the possibility of infinite
+recursion.  And it fits with the typical use of these functions, which is to 
+use the standard case change except for a few select characters, as shown in
+the example below.
 
 It is an error to not specify at least one override in the "use" statement.
-Ones not specified use the standard version.  It is also an error to specify
+Ones not specified use the standard operation.  It is also an error to specify
 more than one override for the same function.
 
 C<use re 'eval'> is not needed to have the inline case-changing sequences
@@ -211,7 +235,7 @@ work in regular expressions.
 
 Here's an example of a real-life application, for Turkish, that shows
 context-sensitive case-changing.  (Because of bugs in earlier Perls, version
-5.12 is required for this example to work properly.)
+v5.12 is required for this example to work properly.)
 
  sub turkish_lc($) {
     my $string = shift;
@@ -228,7 +252,7 @@ context-sensitive case-changing.  (Because of bugs in earlier Perls, version
 
     $string =~ s/\x{130}/i/g;
 
-    return CORE::lc($string);
+    return lc($string);
  }
 
 A potential problem with context-dependent case changing is that the routine
@@ -274,7 +298,8 @@ See L<http://perlmonks.org/?node_id=797851>.
 
 Karl Williamson, C<< <khw@cpan.org> >>,
 with advice and guidance from various Perl 5 porters,
-including Paul Evans, Burak Gürsoy, Florian Ragwitz, and Ricardo Signes.
+including Paul Evans, Burak Gürsoy, Florian Ragwitz, Ricardo Signes,
+and Matthew S. Trout.
 
 =head1 COPYRIGHT AND LICENSE
 
