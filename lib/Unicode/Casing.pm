@@ -43,7 +43,7 @@ local @recursed;
 
 my $fc_glob;
 
-# This is a work-around, suggested by Matthew S Trout, to the problem that
+# This is a work-around, suggested by Matt S. Trout, to the problem that
 # CORE::fc() is a syntax error on Perls prior to v5.15.8.  We have to avoid
 # compiling that expression on those Perls, but we want the compile-time
 # version of it on Perls that handle it.  Another solution would be to put it
@@ -51,6 +51,8 @@ my $fc_glob;
 # official version.  We can't do a string eval or otherwise defer this to
 # runtime, because by the time _dispatch is called, the op has been replaced,
 # and we would get infinite recursion.
+# Actually, I'm not sure the CORE:: is actually needed at all, but am leaving
+# it in just to be safe.
 BEGIN {
     no strict;
     $fc_glob = \*{"CORE::fc"} if $^V ge v5.15.8;
@@ -85,15 +87,6 @@ sub _dispatch {
         return CORE::ucfirst($string) if $function eq 'ucfirst';
         return CORE::lcfirst($string) if $function eq 'lcfirst';
         return &$fc_glob($string) if $function eq 'fc';
-#        if ($function eq 'fc') {
-#            return fc($string);
-#
-#            # Need to do string eval so this whole file compiles on releases
-#            # where CORE::fc() doesn't exist.
-#            my $fc = eval "CORE::fc(\$string)";
-#            croak $@ if $@;
-#            return $fc;
-#        }
     }
 
     local $recursed[$index] = $string;
@@ -204,7 +197,7 @@ C<\U>, C<\u>, and C<\F> escapes in double-quoted strings and regular
 expressions.
 
 Each function is passed a string whose case is to be changed, and should
-return that case-changed version of that string.  Within the function's
+return the case-changed version of that string.  Within the function's
 dynamic scope, references to the operation it is overriding use the
 non-overridden version.  For example:
     
@@ -222,7 +215,7 @@ the override function for C<uc()> will call the non-overridden C<uc()>.
 Since this applies across the dynamic scope, if C<my_uc> calls function C<a>
 which calls C<b> which calls C<c> which calls C<uc>, that C<uc> is the
 non-overridden version.  Otherwise there would be the possibility of infinite
-recursion.  And it fits with the typical use of these functions, which is to 
+recursion.  And, it fits with the typical use of these functions, which is to 
 use the standard case change except for a few select characters, as shown in
 the example below.
 
@@ -294,12 +287,19 @@ force install B::Hooks::OP::PPAddr
 
 See L<http://perlmonks.org/?node_id=797851>.
 
+=head1 BUGS
+
+This module doesn't play well when there are other attempts to override the
+functions, such as C<use subs qw(uc lc ...);> or
+S<C<*CORE::GLOBAL::uc = sub { .... };>>.  Which thing gets called depends on
+the ordering of the calls, and scoping rules break down.
+
 =head1 AUTHOR
 
 Karl Williamson, C<< <khw@cpan.org> >>,
 with advice and guidance from various Perl 5 porters,
 including Paul Evans, Burak Gürsoy, Florian Ragwitz, Ricardo Signes,
-and Matthew S. Trout.
+and Matt S. Trout.
 
 =head1 COPYRIGHT AND LICENSE
 

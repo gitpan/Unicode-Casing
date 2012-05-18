@@ -29,7 +29,7 @@ sub simple_ucfirst2 {
 
 sub simple_lc1 {
     my $string = shift;
-    $string = lc($string);
+    $string = CORE::lc($string);
     $string =~ s/a/_a1_/g;
     return $string;
 }
@@ -48,7 +48,6 @@ sub simple_fc1 {
     $string =~ s/a/_a1_/g;
     return $string;
 }
-
 
 use Unicode::Casing uc => \&simple_uc1, ucfirst => \&simple_ucfirst1,
                     lc => \&simple_lc1, lcfirst => \&simple_lcfirst1;

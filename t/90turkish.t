@@ -3,6 +3,8 @@
 
 use Test::More;
 
+use if $^V ge v5.15.8, 'feature', 'fc';
+
 plan skip_all => 'Needs 5.12 for various Unicode things' if $] < 5.012;
 plan tests => 49;
 
@@ -54,21 +56,17 @@ sub turkish_lcfirst($) {
 }
 
 sub turkish_fc($) {
+    # I (khw) believe this is correct, but am not sure.  It works just like
+    # turkish_lc() does for the Turkic-specific changes.
+
     my $string = shift;
 
-    # Unless an I is before a dot_above, it turns into a dotless i (the dot
-    # above being attached to the I, without an intervening other Above mark;
-    # an intervening non-mark (ccc=0) would mean that the dot above would be
-    # attached to that character and not the I)
     $string =~ s/I (?! [^\p{ccc=0}\p{ccc=Above}]* \x{0307} )/\x{131}/gx;
 
-    # But when the I is followed by a dot_above, remove the dot_above so
-    # the end result will be i.
     $string =~ s/I ([^\p{ccc=0}\p{ccc=Above}]* ) \x{0307}/i$1/gx;
 
     $string =~ s/\x{130}/i/g;
 
-    use if $^V ge v5.15.8, 'feature', 'fc';
     return fc($string);
 }
 
@@ -126,7 +124,6 @@ is("\l\x{130}\x{130}", "i\x{130}", 'Verify that "\l\x{130}\x{130}" eq "i\x{130}"
 SKIP: { 
     skip "fc not in this version of Perl", 12 if $^V lt v5.15.8;
 
-    use if $^V ge v5.15.8, 'feature', 'fc';
     is(fc("AA"), "aa", 'Verify that fc of non-overridden ASCII works');
     is("\FAA", "aa", 'Verify that fc of non-overridden ASCII works');
     is(fc("\x{0178}\x{0178}"), "\x{FF}\x{FF}", 'Verify that fc of non-overridden utf8 works');
