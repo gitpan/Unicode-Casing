@@ -1,12 +1,13 @@
 --- #YAML:1.0
 name:               Unicode-Casing
-version:            0.11
+version:            0.12
 abstract:           Perl extension to override system case changing functions
 author:
     - Karl Williamson <khw@cpan.org>
 license:            unknown
 distribution_type:  module
 configure_requires:
+    B::Hooks::OP::Check:  0
     B::Hooks::OP::PPAddr:  0
     ExtUtils::Depends:    0
     ExtUtils::MakeMaker:  0
