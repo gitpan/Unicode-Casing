@@ -2,16 +2,10 @@
 abstract: 'Perl extension to override system case changing functions'
 author:
   - 'Karl Williamson <khw@cpan.org>'
-build_requires:
-  ExtUtils::MakeMaker: 0
-configure_requires:
-  B::Hooks::OP::Check: 0
-  B::Hooks::OP::PPAddr: 0
-  ExtUtils::Depends: 0
-  ExtUtils::MakeMaker: 0
+build_requires: {}
 dynamic_config: 1
 generated_by: 'ExtUtils::MakeMaker version 6.66, CPAN::Meta::Converter version 2.120921'
-license: unknown
+license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
   version: 1.4
@@ -20,9 +14,6 @@ no_index:
   directory:
     - t
     - inc
-requires:
-  B::Hooks::OP::Check: 0
-  B::Hooks::OP::PPAddr: 0
-  Test::More: 0
-  XSLoader: 0
-version: 0.13
+resources:
+  repository: https://github.com/khwilliamson/Unicode-Casing
+version: 0.14
