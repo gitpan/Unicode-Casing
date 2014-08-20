@@ -16,4 +16,4 @@ no_index:
     - inc
 resources:
   repository: https://github.com/khwilliamson/Unicode-Casing
-version: 0.14
+version: 0.15

@@ -2,6 +2,7 @@ Casing.xs
 Changes
 lib/Unicode/Casing.pm
 Makefile.PL
+LICENSE
 MANIFEST
 ppport.h
 README
